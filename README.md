@@ -39,6 +39,7 @@ codex fork <session-id>
 - Shows all available local Codex sessions grouped by project directory.
 - Includes sessions present only as rollout files, even if they are missing from `session_index.jsonl`.
 - Includes archived rollout sessions from `archived_sessions`.
+- Hides delegated subagent sessions by default; use `--include-subagents` when you need to inspect them.
 - Opens a directory first, then shows sessions inside that directory.
 - Supports keyboard navigation, search, resume, fork, and back.
 - Uses responsive terminal dimensions, so the visible list adapts to the current window size.

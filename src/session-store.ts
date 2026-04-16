@@ -11,6 +11,10 @@ const sessionIndexRowSchema = z.object({
   updated_at: z.string().min(1)
 });
 
+const sessionSourceSchema = z
+  .union([z.string(), z.object({subagent: z.unknown().optional()}).passthrough()])
+  .nullish();
+
 const sessionMetaLineSchema = z.object({
   timestamp: z.string().nullish(),
   type: z.literal('session_meta'),
@@ -20,6 +24,7 @@ const sessionMetaLineSchema = z.object({
     cwd: z.string().nullish(),
     cli_version: z.string().nullish(),
     originator: z.string().nullish(),
+    source: sessionSourceSchema,
     model_provider: z.string().nullish()
   })
 });
@@ -35,6 +40,7 @@ type SessionLogMetadata = {
   originator: string | undefined;
   modelProvider: string | undefined;
   logPath: string;
+  isSubagent: boolean;
 };
 
 export type CodexSession = {
@@ -51,12 +57,14 @@ export type CodexSession = {
 
 export type LoadCodexSessionsOptions = {
   codexHome?: string;
+  includeSubagents?: boolean;
 };
 
 export async function loadCodexSessions(
   options: LoadCodexSessionsOptions = {}
 ): Promise<CodexSession[]> {
   const codexHome = options.codexHome ?? join(homedir(), '.codex');
+  const includeSubagents = options.includeSubagents ?? false;
   const indexRows = await readSessionIndex(join(codexHome, 'session_index.jsonl'));
   const logPaths = (
     await Promise.all([
@@ -67,9 +75,15 @@ export async function loadCodexSessions(
   const logMetadata = await readAllSessionLogMetadata(logPaths);
   const metadataById = new Map(logMetadata.map(metadata => [metadata.id, metadata]));
   const indexIds = new Set(indexRows.map(row => row.id));
+  const visibleIndexRows = includeSubagents
+    ? indexRows
+    : indexRows.filter(row => !metadataById.get(row.id)?.isSubagent);
+  const visibleLogMetadata = includeSubagents
+    ? logMetadata
+    : logMetadata.filter(metadata => !metadata.isSubagent);
 
   const sessions = [
-    ...indexRows.map(row => {
+    ...visibleIndexRows.map(row => {
       const metadata = metadataById.get(row.id);
 
       return {
@@ -84,7 +98,7 @@ export async function loadCodexSessions(
         available: Boolean(metadata)
       };
     }),
-    ...logMetadata
+    ...visibleLogMetadata
       .filter(metadata => !indexIds.has(metadata.id))
       .map(metadata => ({
         id: metadata.id,
@@ -122,12 +136,17 @@ async function readAllSessionLogMetadata(paths: readonly string[]): Promise<Sess
         cliVersion: metadata.payload.cli_version ?? undefined,
         originator: metadata.payload.originator ?? undefined,
         modelProvider: metadata.payload.model_provider ?? undefined,
-        logPath: path
+        logPath: path,
+        isSubagent: isSubagentSource(metadata.payload.source)
       };
     })
   );
 
   return results.filter((metadata): metadata is SessionLogMetadata => Boolean(metadata));
+}
+
+function isSubagentSource(source: SessionMetaLine['payload']['source']): boolean {
+  return Boolean(source && typeof source === 'object' && 'subagent' in source && source.subagent);
 }
 
 async function readSessionIndex(path: string): Promise<SessionIndexRow[]> {

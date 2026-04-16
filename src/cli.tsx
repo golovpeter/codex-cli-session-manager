@@ -14,8 +14,12 @@ program
   .version('0.1.0')
   .option('--codex-home <path>', 'Path to the Codex home directory')
   .option('--cwd <path>', 'Current working directory used for the scope toggle', process.cwd())
+  .option('--include-subagents', 'Show sessions created by delegated Codex subagents')
   .action(async options => {
-    const sessions = await loadCodexSessions({codexHome: options.codexHome});
+    const sessions = await loadCodexSessions({
+      codexHome: options.codexHome,
+      includeSubagents: options.includeSubagents
+    });
     let selectedAction: AppAction | undefined;
 
     const app = render(

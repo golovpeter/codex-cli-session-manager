@@ -133,6 +133,82 @@ describe('loadCodexSessions', () => {
     ]);
   });
 
+  test('hides subagent rollout sessions by default', async () => {
+    const codexHome = await createCodexHome();
+    const parentSessionId = '019d95fa-8714-7a63-880b-31026a74ff9b';
+    const subagentSessionId = '019d95ff-d220-7532-9b0b-3507f40daa8f';
+    const sessionDir = join(codexHome, 'sessions', '2026', '04', '16');
+
+    await mkdir(sessionDir, {recursive: true});
+    await writeFile(join(codexHome, 'session_index.jsonl'), '');
+    await writeFile(
+      join(sessionDir, `rollout-2026-04-16T14-14-23-${subagentSessionId}.jsonl`),
+      [
+        JSON.stringify({
+          timestamp: '2026-04-16T11:14:28.496Z',
+          type: 'session_meta',
+          payload: {
+            id: subagentSessionId,
+            timestamp: '2026-04-16T11:14:23.000Z',
+            cwd: '/workspace/codex-session-manager',
+            cli_version: '0.121.0',
+            originator: 'codex-tui',
+            model_provider: 'openai',
+            source: {
+              subagent: {
+                thread_spawn: {
+                  parent_thread_id: parentSessionId,
+                  depth: 1,
+                  agent_role: 'reviewer'
+                }
+              }
+            }
+          }
+        })
+      ].join('\n')
+    );
+
+    const sessions = await loadCodexSessions({codexHome});
+
+    expect(sessions).toEqual([]);
+  });
+
+  test('can include subagent rollout sessions when requested', async () => {
+    const codexHome = await createCodexHome();
+    const subagentSessionId = '019d95ff-d220-7532-9b0b-3507f40daa8f';
+    const sessionDir = join(codexHome, 'sessions', '2026', '04', '16');
+
+    await mkdir(sessionDir, {recursive: true});
+    await writeFile(join(codexHome, 'session_index.jsonl'), '');
+    await writeFile(
+      join(sessionDir, `rollout-2026-04-16T14-14-23-${subagentSessionId}.jsonl`),
+      [
+        JSON.stringify({
+          timestamp: '2026-04-16T11:14:28.496Z',
+          type: 'session_meta',
+          payload: {
+            id: subagentSessionId,
+            timestamp: '2026-04-16T11:14:23.000Z',
+            cwd: '/workspace/codex-session-manager',
+            source: {
+              subagent: {
+                thread_spawn: {
+                  parent_thread_id: '019d95fa-8714-7a63-880b-31026a74ff9b',
+                  depth: 1,
+                  agent_role: 'reviewer'
+                }
+              }
+            }
+          }
+        })
+      ].join('\n')
+    );
+
+    const sessions = await loadCodexSessions({codexHome, includeSubagents: true});
+
+    expect(sessions.map(session => session.id)).toEqual([subagentSessionId]);
+  });
+
   test('loads archived rollout sessions as normal resumable sessions', async () => {
     const codexHome = await createCodexHome();
     const sessionId = '019a8d41-d164-7583-b38c-df7b13617e44';
