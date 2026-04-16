@@ -1,0 +1,52 @@
+{
+  "name": "cli-codex-manage-sessions",
+  "version": "0.1.0",
+  "description": "Interactive CLI for finding and resuming Codex sessions across projects.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "cli",
+    "tui",
+    "sessions",
+    "terminal",
+    "ink"
+  ],
+  "bin": {
+    "cx": "./dist/cli.js"
+  },
+  "files": [
+    ".gitignore",
+    "dist"
+  ],
+  "scripts": {
+    "clean": "node scripts/clean-dist.mjs",
+    "build": "npm run clean && tsc -p tsconfig.build.json && node scripts/chmod-bin.mjs",
+    "dev": "tsx src/cli.tsx",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm test && npm run typecheck",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "commander": "^14.0.2",
+    "execa": "^9.6.0",
+    "ink": "^7.0.0",
+    "react": "^19.2.3",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.0",
+    "@types/react": "^19.2.7",
+    "ink-testing-library": "^4.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  }
+}

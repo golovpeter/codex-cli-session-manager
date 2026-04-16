@@ -1,0 +1,110 @@
+# cx - Codex Session Navigator
+
+<p align="center">
+  <strong>A fast terminal navigator for local Codex sessions across projects.</strong>
+</p>
+
+---
+
+## Screenshots
+
+Add screenshots here when the UI settles.
+
+| Directory picker | Session picker |
+| --- | --- |
+| `assets/screenshots/directory-picker.png` | `assets/screenshots/session-picker.png` |
+
+Suggested captures:
+
+- `cx` start screen with project directories
+- selected directory with available sessions
+- search mode
+- narrow terminal layout
+
+---
+
+`cx` is a keyboard-first terminal UI for browsing local Codex sessions without opening the Codex desktop app.
+
+It scans the local Codex session storage, groups sessions by working directory, and lets you jump back into the right thread with the official Codex CLI:
+
+```bash
+codex resume <session-id>
+codex fork <session-id>
+```
+
+`cx` does not rewrite Codex history, does not edit session files, and does not display full conversation contents.
+
+### What It Does
+
+- Shows all available local Codex sessions grouped by project directory.
+- Includes sessions present only as rollout files, even if they are missing from `session_index.jsonl`.
+- Includes archived rollout sessions from `archived_sessions`.
+- Opens a directory first, then shows sessions inside that directory.
+- Supports keyboard navigation, search, resume, fork, and back.
+- Uses responsive terminal dimensions, so the visible list adapts to the current window size.
+
+### Keyboard
+
+| Key | Directory screen | Session screen |
+| --- | --- | --- |
+| `Enter` | Open directory | Resume session |
+| `f` | - | Fork session |
+| `/` | Search directories | Search sessions |
+| `j` / `Down` | Move down | Move down |
+| `k` / `Up` | Move up | Move up |
+| `Esc` / `Backspace` / `b` | - | Back to directories |
+| `q` | Quit | Quit |
+
+### Install Locally
+
+```bash
+npm install
+npm run build
+npm link
+cx
+```
+
+After `npm link`, future source changes usually only need:
+
+```bash
+npm run build
+cx
+```
+
+### Run Without Linking
+
+```bash
+npm run build
+node dist/cli.js
+```
+
+### Development
+
+```bash
+npm run dev
+npm test
+npm run typecheck
+npm run build
+```
+
+### How It Finds Sessions
+
+`cx` reads local Codex metadata from:
+
+```text
+~/.codex/session_index.jsonl
+~/.codex/sessions/**/*.jsonl
+~/.codex/archived_sessions/*.jsonl
+```
+
+The session reader uses `session_meta` records for metadata such as session id, working directory, timestamp, Codex CLI version, and model provider. It avoids printing conversation messages.
+
+### Stack
+
+- TypeScript
+- Node.js `>=20`
+- Ink + React
+- Commander.js
+- Execa
+- Zod
+- Vitest
