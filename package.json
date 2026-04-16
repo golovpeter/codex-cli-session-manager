@@ -13,7 +13,7 @@
     "ink"
   ],
   "bin": {
-    "cdx-sessions": "./dist/cli.js"
+    "cdx-sessions": "dist/cli.js"
   },
   "files": [
     ".gitignore",
