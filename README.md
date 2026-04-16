@@ -50,11 +50,14 @@ codex fork <session-id>
 | --- | --- | --- |
 | `Enter` | Open directory | Resume session |
 | `f` | - | Fork session |
+| `d` | - | Delete session with confirmation |
 | `/` | Search directories | Search sessions |
 | `j` / `Down` | Move down | Move down |
 | `k` / `Up` | Move up | Move up |
 | `Esc` / `Backspace` / `b` | - | Back to directories |
 | `q` | Quit | Quit |
+
+Deleting a session removes its row from `session_index.jsonl` and removes the selected rollout file when one is available. `cx` asks for confirmation before deleting.
 
 ### Install Locally
 

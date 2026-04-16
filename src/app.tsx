@@ -9,6 +9,10 @@ import type {CodexSession} from './session-store.js';
 export type AppAction = {
   kind: 'resume' | 'fork';
   sessionId: string;
+} | {
+  kind: 'delete';
+  sessionId: string;
+  logPath: string | undefined;
 };
 
 export type AppProps = {
@@ -30,6 +34,7 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [selectedCwd, setSelectedCwd] = useState<string | undefined>();
+  const [deleteCandidate, setDeleteCandidate] = useState<CodexSession | undefined>();
 
   const directoryGroups = useMemo(() => {
     const groups = groupSessionsByDirectory(sessions);
@@ -86,6 +91,20 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
       return;
     }
 
+    if (deleteCandidate) {
+      if (input === 'y') {
+        onAction({kind: 'delete', sessionId: deleteCandidate.id, logPath: deleteCandidate.logPath});
+        exit();
+        return;
+      }
+
+      if (input === 'n' || key.escape) {
+        setDeleteCandidate(undefined);
+      }
+
+      return;
+    }
+
     if (input === 'q') {
       exit();
       return;
@@ -101,6 +120,7 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
       setSelectedCwd(undefined);
       setSelectedIndex(0);
       setQuery('');
+      setDeleteCandidate(undefined);
       return;
     }
 
@@ -137,6 +157,11 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
     if (input === 'f' && selectedSession?.available) {
       onAction({kind: 'fork', sessionId: selectedSession.id});
       exit();
+      return;
+    }
+
+    if (input === 'd' && selectedSession) {
+      setDeleteCandidate(selectedSession);
     }
   });
 
@@ -155,6 +180,8 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
       />
 
       <Box flexDirection="column" flexGrow={1}>
+        {deleteCandidate ? <DeleteConfirmation session={deleteCandidate} /> : undefined}
+
         {mode === 'directories' ? (
           <DirectoryList
             groups={rowsToRender as SessionDirectoryGroup[]}
@@ -172,7 +199,16 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
         )}
       </Box>
 
-      <Footer mode={mode} />
+      <Footer mode={mode} isConfirmingDelete={Boolean(deleteCandidate)} />
+    </Box>
+  );
+}
+
+function DeleteConfirmation({session}: {session: CodexSession}) {
+  return (
+    <Box flexDirection="column" marginBottom={1}>
+      <Text color="yellow">Delete this session?</Text>
+      <Text>{session.title}</Text>
     </Box>
   );
 }
@@ -312,11 +348,12 @@ function SessionRow({
   );
 }
 
-function Footer({mode}: {mode: ViewMode}) {
-  const hint =
-    mode === 'directories'
+function Footer({mode, isConfirmingDelete}: {mode: ViewMode; isConfirmingDelete: boolean}) {
+  const hint = isConfirmingDelete
+    ? 'y confirm delete   n/Esc cancel'
+    : mode === 'directories'
       ? 'Enter open   j/k move   / search directories   q quit'
-      : 'Enter resume   f fork   Esc back   j/k move   / search sessions   q quit';
+      : 'Enter resume   f fork   d delete   Esc back   j/k move   / search sessions   q quit';
 
   return (
     <Box marginTop={1}>

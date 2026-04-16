@@ -63,4 +63,62 @@ describe('App', () => {
 
     expect(lastFrame()).toContain('No directories found');
   });
+
+  test('asks for confirmation before deleting a selected session', async () => {
+    const actions: unknown[] = [];
+    const {lastFrame, stdin} = render(
+      <App
+        sessions={[session]}
+        currentCwd="/workspace/codex-session-manager"
+        onAction={action => actions.push(action)}
+      />
+    );
+
+    stdin.write('\r');
+    await waitForInput();
+    stdin.write('d');
+    await waitForInput();
+
+    expect(lastFrame()).toContain('Delete this session?');
+    expect(lastFrame()).toContain('y confirm');
+
+    stdin.write('y');
+    await waitForInput();
+
+    expect(actions).toEqual([
+      {
+        kind: 'delete',
+        sessionId: session.id,
+        logPath: session.logPath
+      }
+    ]);
+  });
+
+  test('cancels delete confirmation with n', async () => {
+    const actions: unknown[] = [];
+    const {lastFrame, stdin} = render(
+      <App
+        sessions={[session]}
+        currentCwd="/workspace/codex-session-manager"
+        onAction={action => actions.push(action)}
+      />
+    );
+
+    stdin.write('\r');
+    await waitForInput();
+    stdin.write('d');
+    await waitForInput();
+    stdin.write('n');
+    await waitForInput();
+
+    expect(lastFrame()).toContain('Build Codex session navigator');
+    expect(lastFrame()).not.toContain('Delete this session?');
+    expect(actions).toEqual([]);
+  });
 });
+
+async function waitForInput() {
+  await new Promise(resolve => {
+    setTimeout(resolve, 0);
+  });
+}
