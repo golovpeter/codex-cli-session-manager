@@ -10,7 +10,7 @@ import {deleteCodexSession} from './session-delete.js';
 const program = new Command();
 
 program
-  .name('cx')
+  .name('codex-sessions')
   .description('Interactive Codex session navigator')
   .version('0.1.0')
   .option('--codex-home <path>', 'Path to the Codex home directory')
@@ -55,7 +55,7 @@ program
     if (selectedAction) {
       const result = await runCodexAction(selectedAction);
       if (!result.ok) {
-        console.error(`cx: ${result.message}`);
+        console.error(`codex-sessions: ${result.message}`);
         process.exitCode = result.exitCode;
       }
     }

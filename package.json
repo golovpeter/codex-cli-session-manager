@@ -13,7 +13,7 @@
     "ink"
   ],
   "bin": {
-    "cx": "./dist/cli.js"
+    "codex-sessions": "./dist/cli.js"
   },
   "files": [
     ".gitignore",

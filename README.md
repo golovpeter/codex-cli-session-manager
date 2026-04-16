@@ -1,4 +1,4 @@
-# cx - Codex Session Navigator
+# codex-sessions - Codex Session Navigator
 
 <p align="center">
   <strong>A fast terminal navigator for local Codex sessions across projects.</strong>
@@ -16,14 +16,14 @@ Add screenshots here when the UI settles.
 
 Suggested captures:
 
-- `cx` start screen with project directories
+- `codex-sessions` start screen with project directories
 - selected directory with available sessions
 - search mode
 - narrow terminal layout
 
 ---
 
-`cx` is a keyboard-first terminal UI for browsing local Codex sessions without opening the Codex desktop app.
+`codex-sessions` is a keyboard-first terminal UI for browsing local Codex sessions without opening the Codex desktop app.
 
 It scans the local Codex session storage, groups sessions by working directory, and lets you jump back into the right thread with the official Codex CLI:
 
@@ -32,7 +32,7 @@ codex resume <session-id>
 codex fork <session-id>
 ```
 
-`cx` does not rewrite Codex history, does not edit session files, and does not display full conversation contents.
+`codex-sessions` does not rewrite Codex history, does not edit session files, and does not display full conversation contents.
 
 ### What It Does
 
@@ -57,7 +57,7 @@ codex fork <session-id>
 | `Esc` / `Backspace` / `b` | - | Back to directories |
 | `q` | Quit | Quit |
 
-Deleting a session removes its row from `session_index.jsonl` and removes the selected rollout file when one is available. `cx` asks for confirmation; press `Enter` to confirm or `Esc` to cancel.
+Deleting a session removes its row from `session_index.jsonl` and removes the selected rollout file when one is available. `codex-sessions` asks for confirmation; press `Enter` to confirm or `Esc` to cancel.
 
 ### Install Locally
 
@@ -65,14 +65,14 @@ Deleting a session removes its row from `session_index.jsonl` and removes the se
 npm install
 npm run build
 npm link
-cx
+codex-sessions
 ```
 
 After `npm link`, future source changes usually only need:
 
 ```bash
 npm run build
-cx
+codex-sessions
 ```
 
 ### Run Without Linking
@@ -93,7 +93,7 @@ npm run build
 
 ### How It Finds Sessions
 
-`cx` reads local Codex metadata from:
+`codex-sessions` reads local Codex metadata from:
 
 ```text
 ~/.codex/session_index.jsonl

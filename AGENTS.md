@@ -2,7 +2,7 @@
 
 ## Product Direction
 
-Build `cx`: an interactive terminal UI for navigating local Codex sessions across project directories without opening the Codex desktop app.
+Build `codex-sessions`: an interactive terminal UI for navigating local Codex sessions across project directories without opening the Codex desktop app.
 
 MVP scope:
 - Read local Codex metadata from `~/.codex/session_index.jsonl`.
