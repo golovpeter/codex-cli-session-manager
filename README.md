@@ -1,4 +1,4 @@
-# codex-sessions - Codex Session Navigator
+# cdx-sessions - Codex Session Navigator
 
 <p align="center">
   <strong>A fast terminal navigator for local Codex sessions across projects.</strong>
@@ -17,14 +17,14 @@ Add screenshots here when the UI settles.
 
 Suggested captures:
 
-- `codex-sessions` start screen with project directories
+- `cdx-sessions` start screen with project directories
 - selected directory with available sessions
 - search mode
 - narrow terminal layout
 
 ---
 
-`codex-sessions` is a keyboard-first terminal UI for browsing local Codex sessions without opening the Codex desktop app.
+`cdx-sessions` is a keyboard-first terminal UI for browsing local Codex sessions without opening the Codex desktop app.
 
 It scans the local Codex session storage, groups sessions by working directory, and lets you jump back into the right thread with the official Codex CLI:
 
@@ -33,7 +33,7 @@ codex resume <session-id>
 codex fork <session-id>
 ```
 
-`codex-sessions` does not rewrite Codex history, does not edit session files, and does not display full conversation contents.
+`cdx-sessions` does not rewrite Codex history, does not edit session files, and does not display full conversation contents.
 
 ### What It Does
 
@@ -59,9 +59,9 @@ codex fork <session-id>
 | `Esc` / `Backspace` / `b` | - | Back to directories |
 | `q` | Quit | Quit |
 
-Deleting a session removes its row from `session_index.jsonl` and removes the selected rollout file when one is available. `codex-sessions` asks for confirmation; press `Enter` to confirm or `Esc` to cancel.
+Deleting a session removes its row from `session_index.jsonl` and removes the selected rollout file when one is available. `cdx-sessions` asks for confirmation; press `Enter` to confirm or `Esc` to cancel.
 
-Unsafe resume launches `codex --dangerously-bypass-approvals-and-sandbox resume <session-id>`. `codex-sessions` asks for confirmation before using this mode.
+Unsafe resume launches `codex --dangerously-bypass-approvals-and-sandbox resume <session-id>`. `cdx-sessions` asks for confirmation before using this mode.
 
 ### Install Locally
 
@@ -69,7 +69,7 @@ From npm:
 
 ```bash
 npm install -g cdx-sessions
-codex-sessions
+cdx-sessions
 ```
 
 From a local checkout:
@@ -78,14 +78,14 @@ From a local checkout:
 npm install
 npm run build
 npm link
-codex-sessions
+cdx-sessions
 ```
 
 After `npm link`, future source changes usually only need:
 
 ```bash
 npm run build
-codex-sessions
+cdx-sessions
 ```
 
 ### Run Without Linking
@@ -106,7 +106,7 @@ npm run build
 
 ### How It Finds Sessions
 
-`codex-sessions` reads local Codex metadata from:
+`cdx-sessions` reads local Codex metadata from:
 
 ```text
 ~/.codex/session_index.jsonl

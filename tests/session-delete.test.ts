@@ -6,7 +6,7 @@ import {describe, expect, test} from 'vitest';
 import {deleteCodexSession} from '../src/session-delete.js';
 
 async function createCodexHome() {
-  const root = await mkdtemp(join(tmpdir(), 'codex-sessions-delete-'));
+  const root = await mkdtemp(join(tmpdir(), 'cdx-sessions-delete-'));
   const codexHome = join(root, '.codex');
   await mkdir(codexHome, {recursive: true});
   return codexHome;
@@ -85,7 +85,7 @@ describe('deleteCodexSession', () => {
 
   test('rejects rollout paths outside the Codex home directory', async () => {
     const codexHome = await createCodexHome();
-    const outsideFile = join(tmpdir(), 'codex-sessions-outside-rollout.jsonl');
+    const outsideFile = join(tmpdir(), 'cdx-sessions-outside-rollout.jsonl');
     await writeFile(outsideFile, '{}\n');
 
     await expect(

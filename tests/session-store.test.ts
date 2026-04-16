@@ -5,7 +5,7 @@ import {describe, expect, test} from 'vitest';
 import {loadCodexSessions} from '../src/session-store.js';
 
 async function createCodexHome() {
-  const root = await mkdtemp(join(tmpdir(), 'codex-sessions-store-'));
+  const root = await mkdtemp(join(tmpdir(), 'cdx-sessions-store-'));
   const codexHome = join(root, '.codex');
   await mkdir(codexHome, {recursive: true});
   return codexHome;
