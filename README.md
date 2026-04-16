@@ -13,7 +13,6 @@ Add screenshots here when the UI settles.
 | Directory picker | Session picker |
 | --- | --- |
 | <img width="637" height="599" alt="image" src="https://github.com/user-attachments/assets/3325718b-a72c-47a7-a381-92aeda37898a" /> | <img width="717" height="597" alt="image" src="https://github.com/user-attachments/assets/4dc9171d-0837-447c-a893-08fd5751b2f6" />
- |
 
 Suggested captures:
 
