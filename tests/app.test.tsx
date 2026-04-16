@@ -64,13 +64,16 @@ describe('App', () => {
     expect(lastFrame()).toContain('No directories found');
   });
 
-  test('asks for confirmation before deleting a selected session', async () => {
+  test('deletes a selected session after Enter confirmation without exiting', async () => {
     const actions: unknown[] = [];
     const {lastFrame, stdin} = render(
       <App
         sessions={[session]}
         currentCwd="/workspace/codex-session-manager"
-        onAction={action => actions.push(action)}
+        onAction={action => {
+          actions.push(action);
+          return {ok: true};
+        }}
       />
     );
 
@@ -80,9 +83,9 @@ describe('App', () => {
     await waitForInput();
 
     expect(lastFrame()).toContain('Delete this session?');
-    expect(lastFrame()).toContain('y confirm');
+    expect(lastFrame()).toContain('Enter confirm');
 
-    stdin.write('y');
+    stdin.write('\r');
     await waitForInput();
 
     expect(actions).toEqual([
@@ -92,6 +95,8 @@ describe('App', () => {
         logPath: session.logPath
       }
     ]);
+    expect(lastFrame()).toContain('No sessions found in this directory');
+    expect(lastFrame()).not.toContain('Deleted session');
   });
 
   test('cancels delete confirmation with n', async () => {
@@ -100,7 +105,9 @@ describe('App', () => {
       <App
         sessions={[session]}
         currentCwd="/workspace/codex-session-manager"
-        onAction={action => actions.push(action)}
+        onAction={action => {
+          actions.push(action);
+        }}
       />
     );
 

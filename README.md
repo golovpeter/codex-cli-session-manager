@@ -57,7 +57,7 @@ codex fork <session-id>
 | `Esc` / `Backspace` / `b` | - | Back to directories |
 | `q` | Quit | Quit |
 
-Deleting a session removes its row from `session_index.jsonl` and removes the selected rollout file when one is available. `cx` asks for confirmation before deleting.
+Deleting a session removes its row from `session_index.jsonl` and removes the selected rollout file when one is available. `cx` asks for confirmation; press `Enter` to confirm or `Esc` to cancel.
 
 ### Install Locally
 

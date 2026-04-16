@@ -21,14 +21,31 @@ program
       codexHome: options.codexHome,
       includeSubagents: options.includeSubagents
     });
-    let selectedAction: AppAction | undefined;
+    let selectedAction: Extract<AppAction, {kind: 'resume' | 'fork'}> | undefined;
 
     const app = render(
       <App
         sessions={sessions}
         currentCwd={options.cwd}
-        onAction={action => {
+        onAction={async action => {
+          if (action.kind === 'delete') {
+            try {
+              await deleteCodexSession({
+                codexHome: options.codexHome,
+                sessionId: action.sessionId,
+                logPath: action.logPath
+              });
+              return {ok: true};
+            } catch (error) {
+              return {
+                ok: false,
+                message: error instanceof Error ? error.message : 'failed to delete session'
+              };
+            }
+          }
+
           selectedAction = action;
+          return {ok: true};
         }}
       />
     );
@@ -36,26 +53,6 @@ program
     await app.waitUntilExit();
 
     if (selectedAction) {
-      if (selectedAction.kind === 'delete') {
-        try {
-          const result = await deleteCodexSession({
-            codexHome: options.codexHome,
-            sessionId: selectedAction.sessionId,
-            logPath: selectedAction.logPath
-          });
-          console.log(
-            `Deleted session ${selectedAction.sessionId} (${result.deletedIndexRows} index row${
-              result.deletedIndexRows === 1 ? '' : 's'
-            }, ${result.deletedLogFile ? 'rollout removed' : 'no rollout removed'})`
-          );
-        } catch (error) {
-          console.error(`cx: ${error instanceof Error ? error.message : 'failed to delete session'}`);
-          process.exitCode = 1;
-        }
-
-        return;
-      }
-
       const result = await runCodexAction(selectedAction);
       if (!result.ok) {
         console.error(`cx: ${result.message}`);

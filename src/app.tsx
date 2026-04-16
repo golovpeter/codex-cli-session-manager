@@ -6,19 +6,23 @@ import {filterSessions} from './session-filter.js';
 import {groupSessionsByDirectory, type SessionDirectoryGroup} from './session-groups.js';
 import type {CodexSession} from './session-store.js';
 
-export type AppAction = {
-  kind: 'resume' | 'fork';
-  sessionId: string;
-} | {
-  kind: 'delete';
-  sessionId: string;
-  logPath: string | undefined;
-};
+export type AppAction =
+  | {
+      kind: 'resume' | 'fork';
+      sessionId: string;
+    }
+  | {
+      kind: 'delete';
+      sessionId: string;
+      logPath: string | undefined;
+    };
+
+export type AppActionResult = {ok: true} | {ok: false; message: string};
 
 export type AppProps = {
   sessions: readonly CodexSession[];
   currentCwd: string;
-  onAction: (action: AppAction) => void;
+  onAction: (action: AppAction) => AppActionResult | void | Promise<AppActionResult | void>;
 };
 
 type ViewMode = 'directories' | 'sessions';
@@ -29,15 +33,18 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
   const columns = Math.max(60, windowSize.columns ?? 100);
   const rows = Math.max(12, windowSize.rows ?? 24);
   const visibleRows = Math.max(4, rows - 8);
+  const [localSessions, setLocalSessions] = useState(() => [...sessions]);
   const [mode, setMode] = useState<ViewMode>('directories');
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [selectedCwd, setSelectedCwd] = useState<string | undefined>();
   const [deleteCandidate, setDeleteCandidate] = useState<CodexSession | undefined>();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
   const directoryGroups = useMemo(() => {
-    const groups = groupSessionsByDirectory(sessions);
+    const groups = groupSessionsByDirectory(localSessions);
     const normalizedQuery = query.trim().toLowerCase();
 
     if (!normalizedQuery || mode !== 'directories') {
@@ -45,12 +52,20 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
     }
 
     return groups.filter(group => directoryMatchesQuery(group, normalizedQuery));
-  }, [mode, query, sessions]);
+  }, [localSessions, mode, query]);
 
-  const selectedGroup = useMemo(
-    () => directoryGroups.find(group => group.cwd === selectedCwd),
-    [directoryGroups, selectedCwd]
-  );
+  const selectedGroup = useMemo(() => {
+    const group = directoryGroups.find(item => item.cwd === selectedCwd);
+    if (group || !selectedCwd || mode !== 'sessions') {
+      return group;
+    }
+
+    return {
+      cwd: selectedCwd,
+      latestUpdatedAt: new Date(0),
+      sessions: []
+    };
+  }, [directoryGroups, mode, selectedCwd]);
 
   const visibleSessions = useMemo(() => {
     if (!selectedGroup) {
@@ -65,14 +80,6 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
   useEffect(() => {
     setSelectedIndex(index => clamp(index, 0, Math.max(currentRows.length - 1, 0)));
   }, [currentRows.length]);
-
-  useEffect(() => {
-    if (mode === 'sessions' && selectedCwd && !selectedGroup) {
-      setMode('directories');
-      setSelectedCwd(undefined);
-      setSelectedIndex(0);
-    }
-  }, [mode, selectedCwd, selectedGroup]);
 
   usePaste(text => {
     if (isSearching) {
@@ -92,9 +99,8 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
     }
 
     if (deleteCandidate) {
-      if (input === 'y') {
-        onAction({kind: 'delete', sessionId: deleteCandidate.id, logPath: deleteCandidate.logPath});
-        exit();
+      if (key.return && !isDeleting) {
+        void confirmDelete(deleteCandidate);
         return;
       }
 
@@ -162,8 +168,26 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
 
     if (input === 'd' && selectedSession) {
       setDeleteCandidate(selectedSession);
+      setErrorMessage(undefined);
     }
   });
+
+  async function confirmDelete(session: CodexSession): Promise<void> {
+    setIsDeleting(true);
+    setErrorMessage(undefined);
+
+    const result = await onAction({kind: 'delete', sessionId: session.id, logPath: session.logPath});
+
+    if (result?.ok === false) {
+      setErrorMessage(result.message);
+      setIsDeleting(false);
+      return;
+    }
+
+    setLocalSessions(items => items.filter(item => item.id !== session.id));
+    setDeleteCandidate(undefined);
+    setIsDeleting(false);
+  }
 
   const windowStart = calculateWindowStart(selectedIndex, currentRows.length, visibleRows);
   const rowsToRender = currentRows.slice(windowStart, windowStart + visibleRows);
@@ -175,12 +199,14 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
         query={query}
         isSearching={isSearching}
         totalDirectories={directoryGroups.length}
-        totalSessions={sessions.length}
+        totalSessions={localSessions.length}
         selectedGroup={selectedGroup}
       />
 
       <Box flexDirection="column" flexGrow={1}>
-        {deleteCandidate ? <DeleteConfirmation session={deleteCandidate} /> : undefined}
+        {deleteCandidate ? (
+          <DeleteConfirmation session={deleteCandidate} isDeleting={isDeleting} errorMessage={errorMessage} />
+        ) : undefined}
 
         {mode === 'directories' ? (
           <DirectoryList
@@ -204,11 +230,21 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
   );
 }
 
-function DeleteConfirmation({session}: {session: CodexSession}) {
+function DeleteConfirmation({
+  session,
+  isDeleting,
+  errorMessage
+}: {
+  session: CodexSession;
+  isDeleting: boolean;
+  errorMessage: string | undefined;
+}) {
   return (
     <Box flexDirection="column" marginBottom={1}>
       <Text color="yellow">Delete this session?</Text>
       <Text>{session.title}</Text>
+      {isDeleting ? <Text color="gray">Deleting...</Text> : undefined}
+      {errorMessage ? <Text color="red">{errorMessage}</Text> : undefined}
     </Box>
   );
 }
@@ -350,7 +386,7 @@ function SessionRow({
 
 function Footer({mode, isConfirmingDelete}: {mode: ViewMode; isConfirmingDelete: boolean}) {
   const hint = isConfirmingDelete
-    ? 'y confirm delete   n/Esc cancel'
+    ? 'Enter confirm delete   n/Esc cancel'
     : mode === 'directories'
       ? 'Enter open   j/k move   / search directories   q quit'
       : 'Enter resume   f fork   d delete   Esc back   j/k move   / search sessions   q quit';
