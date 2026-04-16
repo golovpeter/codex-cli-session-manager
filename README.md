@@ -49,6 +49,7 @@ codex fork <session-id>
 | Key | Directory screen | Session screen |
 | --- | --- | --- |
 | `Enter` | Open directory | Resume session |
+| `!` | - | Resume without approvals or sandbox |
 | `f` | - | Fork session |
 | `d` | - | Delete session with confirmation |
 | `/` | Search directories | Search sessions |
@@ -58,6 +59,8 @@ codex fork <session-id>
 | `q` | Quit | Quit |
 
 Deleting a session removes its row from `session_index.jsonl` and removes the selected rollout file when one is available. `codex-sessions` asks for confirmation; press `Enter` to confirm or `Esc` to cancel.
+
+Unsafe resume launches `codex --dangerously-bypass-approvals-and-sandbox resume <session-id>`. `codex-sessions` asks for confirmation before using this mode.
 
 ### Install Locally
 

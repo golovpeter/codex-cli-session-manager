@@ -4,6 +4,7 @@ export type CodexAction = {
   kind: 'resume' | 'fork';
   sessionId: string;
   prompt?: string;
+  dangerouslyBypassApprovalsAndSandbox?: boolean;
 };
 
 export type CodexRunResult =
@@ -23,7 +24,14 @@ export type CodexExecutorResult = {
 export type CodexExecutor = (args: string[]) => Promise<CodexExecutorResult>;
 
 export function buildCodexArgs(action: CodexAction): string[] {
-  return [action.kind, action.sessionId, ...(action.prompt ? [action.prompt] : [])];
+  return [
+    ...(action.dangerouslyBypassApprovalsAndSandbox
+      ? ['--dangerously-bypass-approvals-and-sandbox']
+      : []),
+    action.kind,
+    action.sessionId,
+    ...(action.prompt ? [action.prompt] : [])
+  ];
 }
 
 export async function runCodexAction(

@@ -122,6 +122,38 @@ describe('App', () => {
     expect(lastFrame()).not.toContain('Delete this session?');
     expect(actions).toEqual([]);
   });
+
+  test('asks for confirmation before resuming with dangerous bypass mode', async () => {
+    const actions: unknown[] = [];
+    const {lastFrame, stdin} = render(
+      <App
+        sessions={[session]}
+        currentCwd="/workspace/codex-session-manager"
+        onAction={action => {
+          actions.push(action);
+        }}
+      />
+    );
+
+    stdin.write('\r');
+    await waitForInput();
+    stdin.write('!');
+    await waitForInput();
+
+    expect(lastFrame()).toContain('Resume without approvals or sandbox?');
+    expect(lastFrame()).toContain('Enter confirm');
+
+    stdin.write('\r');
+    await waitForInput();
+
+    expect(actions).toEqual([
+      {
+        kind: 'resume',
+        sessionId: session.id,
+        dangerouslyBypassApprovalsAndSandbox: true
+      }
+    ]);
+  });
 });
 
 async function waitForInput() {

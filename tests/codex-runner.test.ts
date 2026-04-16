@@ -21,6 +21,16 @@ describe('buildCodexArgs', () => {
     ]);
   });
 
+  test('places the dangerous bypass flag before the resume command', () => {
+    expect(
+      buildCodexArgs({
+        kind: 'resume',
+        sessionId: 'session-123',
+        dangerouslyBypassApprovalsAndSandbox: true
+      })
+    ).toEqual(['--dangerously-bypass-approvals-and-sandbox', 'resume', 'session-123']);
+  });
+
   test('returns a failed result instead of throwing when codex exits non-zero', async () => {
     const result = await runCodexAction(
       {kind: 'resume', sessionId: 'session-123'},

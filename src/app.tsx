@@ -10,6 +10,7 @@ export type AppAction =
   | {
       kind: 'resume' | 'fork';
       sessionId: string;
+      dangerouslyBypassApprovalsAndSandbox?: boolean;
     }
   | {
       kind: 'delete';
@@ -40,6 +41,7 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [selectedCwd, setSelectedCwd] = useState<string | undefined>();
   const [deleteCandidate, setDeleteCandidate] = useState<CodexSession | undefined>();
+  const [dangerousResumeCandidate, setDangerousResumeCandidate] = useState<CodexSession | undefined>();
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
@@ -111,6 +113,24 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
       return;
     }
 
+    if (dangerousResumeCandidate) {
+      if (key.return) {
+        onAction({
+          kind: 'resume',
+          sessionId: dangerousResumeCandidate.id,
+          dangerouslyBypassApprovalsAndSandbox: true
+        });
+        exit();
+        return;
+      }
+
+      if (input === 'n' || key.escape) {
+        setDangerousResumeCandidate(undefined);
+      }
+
+      return;
+    }
+
     if (input === 'q') {
       exit();
       return;
@@ -127,6 +147,7 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
       setSelectedIndex(0);
       setQuery('');
       setDeleteCandidate(undefined);
+      setDangerousResumeCandidate(undefined);
       return;
     }
 
@@ -169,6 +190,11 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
     if (input === 'd' && selectedSession) {
       setDeleteCandidate(selectedSession);
       setErrorMessage(undefined);
+      return;
+    }
+
+    if (input === '!' && selectedSession?.available) {
+      setDangerousResumeCandidate(selectedSession);
     }
   });
 
@@ -208,6 +234,8 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
           <DeleteConfirmation session={deleteCandidate} isDeleting={isDeleting} errorMessage={errorMessage} />
         ) : undefined}
 
+        {dangerousResumeCandidate ? <DangerousResumeConfirmation session={dangerousResumeCandidate} /> : undefined}
+
         {mode === 'directories' ? (
           <DirectoryList
             groups={rowsToRender as SessionDirectoryGroup[]}
@@ -225,7 +253,21 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
         )}
       </Box>
 
-      <Footer mode={mode} isConfirmingDelete={Boolean(deleteCandidate)} />
+      <Footer
+        mode={mode}
+        isConfirmingDelete={Boolean(deleteCandidate)}
+        isConfirmingDangerousResume={Boolean(dangerousResumeCandidate)}
+      />
+    </Box>
+  );
+}
+
+function DangerousResumeConfirmation({session}: {session: CodexSession}) {
+  return (
+    <Box flexDirection="column" marginBottom={1}>
+      <Text color="red">Resume without approvals or sandbox?</Text>
+      <Text>{session.title}</Text>
+      <Text color="yellow">Codex will run with --dangerously-bypass-approvals-and-sandbox.</Text>
     </Box>
   );
 }
@@ -384,12 +426,22 @@ function SessionRow({
   );
 }
 
-function Footer({mode, isConfirmingDelete}: {mode: ViewMode; isConfirmingDelete: boolean}) {
-  const hint = isConfirmingDelete
+function Footer({
+  mode,
+  isConfirmingDelete,
+  isConfirmingDangerousResume
+}: {
+  mode: ViewMode;
+  isConfirmingDelete: boolean;
+  isConfirmingDangerousResume: boolean;
+}) {
+  const hint = isConfirmingDangerousResume
+    ? 'Enter confirm unsafe resume   n/Esc cancel'
+    : isConfirmingDelete
     ? 'Enter confirm delete   n/Esc cancel'
     : mode === 'directories'
       ? 'Enter open   j/k move   / search directories   q quit'
-      : 'Enter resume   f fork   d delete   Esc back   j/k move   / search sessions   q quit';
+      : 'Enter resume   ! unsafe resume   f fork   d delete   Esc back   j/k move   / search sessions   q quit';
 
   return (
     <Box marginTop={1}>
