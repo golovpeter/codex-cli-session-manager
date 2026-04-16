@@ -1,5 +1,5 @@
 {
-  "name": "cli-codex-manage-sessions",
+  "name": "cdx-sessions",
   "version": "0.1.0",
   "description": "Interactive CLI for finding and resuming Codex sessions across projects.",
   "type": "module",

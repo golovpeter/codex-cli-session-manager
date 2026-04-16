@@ -65,6 +65,15 @@ Unsafe resume launches `codex --dangerously-bypass-approvals-and-sandbox resume 
 
 ### Install Locally
 
+From npm:
+
+```bash
+npm install -g cdx-sessions
+codex-sessions
+```
+
+From a local checkout:
+
 ```bash
 npm install
 npm run build
