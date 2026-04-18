@@ -37,18 +37,22 @@ export function App({sessions, currentCwd, onAction, terminalSize}: AppProps) {
   const windowSize = useWindowSize();
   const columns = Math.max(60, terminalSize?.columns ?? windowSize.columns ?? 100);
   const rows = Math.max(12, terminalSize?.rows ?? windowSize.rows ?? 24);
-  const isWideLayout = columns >= 120;
-  const visibleRows = Math.max(4, rows - 8);
+  const isWideLayout = columns >= 120 && rows >= 28;
   const [localSessions, setLocalSessions] = useState(() => [...sessions]);
   const [mode, setMode] = useState<ViewMode>('directories');
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedDirectoryIndex, setSelectedDirectoryIndex] = useState(0);
+  const [selectedSessionIndex, setSelectedSessionIndex] = useState(0);
   const [selectedCwd, setSelectedCwd] = useState<string | undefined>();
   const [deleteCandidate, setDeleteCandidate] = useState<CodexSession | undefined>();
   const [dangerousResumeCandidate, setDangerousResumeCandidate] = useState<CodexSession | undefined>();
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
+  const bodyRows = Math.max(5, rows - 7);
+  const compactPreviewRows = Math.min(Math.max(8, Math.floor(bodyRows * 0.64)), Math.max(6, bodyRows - 5));
+  const visibleRows =
+    !isWideLayout && mode === 'sessions' ? Math.max(3, bodyRows - compactPreviewRows - 1) : Math.max(4, bodyRows);
 
   function exit(): void {
     app.exit();
@@ -72,7 +76,7 @@ export function App({sessions, currentCwd, onAction, terminalSize}: AppProps) {
 
   const selectedGroup = useMemo(() => {
     if (mode === 'directories') {
-      return directoryGroups[selectedIndex];
+      return directoryGroups[selectedDirectoryIndex];
     }
 
     const group = directoryGroups.find(item => item.cwd === selectedCwd);
@@ -85,7 +89,7 @@ export function App({sessions, currentCwd, onAction, terminalSize}: AppProps) {
       latestUpdatedAt: new Date(0),
       sessions: []
     };
-  }, [directoryGroups, mode, selectedCwd, selectedIndex]);
+  }, [directoryGroups, mode, selectedCwd, selectedDirectoryIndex]);
 
   const visibleSessions = useMemo(() => {
     if (!selectedGroup) {
@@ -96,10 +100,15 @@ export function App({sessions, currentCwd, onAction, terminalSize}: AppProps) {
   }, [currentCwd, query, selectedGroup]);
 
   const currentRows = mode === 'directories' ? directoryGroups : visibleSessions;
+  const selectedIndex = mode === 'directories' ? selectedDirectoryIndex : selectedSessionIndex;
 
   useEffect(() => {
-    setSelectedIndex(index => clamp(index, 0, Math.max(currentRows.length - 1, 0)));
-  }, [currentRows.length]);
+    setSelectedDirectoryIndex(index => clamp(index, 0, Math.max(directoryGroups.length - 1, 0)));
+  }, [directoryGroups.length]);
+
+  useEffect(() => {
+    setSelectedSessionIndex(index => clamp(index, 0, Math.max(visibleSessions.length - 1, 0)));
+  }, [visibleSessions.length]);
 
   usePaste(text => {
     if (isSearching) {
@@ -160,8 +169,6 @@ export function App({sessions, currentCwd, onAction, terminalSize}: AppProps) {
 
     if (mode === 'sessions' && (key.escape || key.backspace || key.delete || input === 'b')) {
       setMode('directories');
-      setSelectedCwd(undefined);
-      setSelectedIndex(0);
       setQuery('');
       setDeleteCandidate(undefined);
       setDangerousResumeCandidate(undefined);
@@ -169,28 +176,36 @@ export function App({sessions, currentCwd, onAction, terminalSize}: AppProps) {
     }
 
     if (key.downArrow || input === 'j') {
-      setSelectedIndex(index => clamp(index + 1, 0, Math.max(currentRows.length - 1, 0)));
+      if (mode === 'directories') {
+        setSelectedDirectoryIndex(index => clamp(index + 1, 0, Math.max(directoryGroups.length - 1, 0)));
+      } else {
+        setSelectedSessionIndex(index => clamp(index + 1, 0, Math.max(visibleSessions.length - 1, 0)));
+      }
       return;
     }
 
     if (key.upArrow || input === 'k') {
-      setSelectedIndex(index => clamp(index - 1, 0, Math.max(currentRows.length - 1, 0)));
+      if (mode === 'directories') {
+        setSelectedDirectoryIndex(index => clamp(index - 1, 0, Math.max(directoryGroups.length - 1, 0)));
+      } else {
+        setSelectedSessionIndex(index => clamp(index - 1, 0, Math.max(visibleSessions.length - 1, 0)));
+      }
       return;
     }
 
     if (mode === 'directories') {
-      const selectedDirectory = directoryGroups[selectedIndex];
+      const selectedDirectory = directoryGroups[selectedDirectoryIndex];
       if (key.return && selectedDirectory) {
         setSelectedCwd(selectedDirectory.cwd);
         setMode('sessions');
-        setSelectedIndex(0);
+        setSelectedSessionIndex(0);
         setQuery('');
       }
 
       return;
     }
 
-    const selectedSession = visibleSessions[selectedIndex];
+    const selectedSession = visibleSessions[selectedSessionIndex];
 
     if (key.return && selectedSession?.available) {
       dispatchActionAndExit({kind: 'resume', sessionId: selectedSession.id});
@@ -236,7 +251,7 @@ export function App({sessions, currentCwd, onAction, terminalSize}: AppProps) {
 
   const windowStart = calculateWindowStart(selectedIndex, currentRows.length, visibleRows);
   const rowsToRender = currentRows.slice(windowStart, windowStart + visibleRows);
-  const selectedSession = visibleSessions[mode === 'sessions' ? selectedIndex : 0];
+  const selectedSession = visibleSessions[selectedSessionIndex];
 
   return (
     <Box flexDirection="column" width={columns} minHeight={rows}>
@@ -262,36 +277,45 @@ export function App({sessions, currentCwd, onAction, terminalSize}: AppProps) {
             sessions={visibleSessions}
             mode={mode}
             selectedDirectoryIndex={
-              mode === 'directories' ? selectedIndex : directoryGroups.findIndex(group => group.cwd === selectedCwd)
+              mode === 'directories'
+                ? selectedDirectoryIndex
+                : directoryGroups.findIndex(group => group.cwd === selectedCwd)
             }
-            selectedSessionIndex={mode === 'sessions' ? selectedIndex : 0}
+            selectedSessionIndex={selectedSessionIndex}
             previewSession={selectedSession}
             columns={columns}
-            rows={rows}
+            rows={bodyRows}
           />
         ) : mode === 'directories' ? (
-          <DirectoryList
-            groups={rowsToRender as SessionDirectoryGroup[]}
-            selectedIndex={selectedIndex}
-            windowStart={windowStart}
-            columns={columns}
-          />
+          <Box borderStyle="round" borderColor="cyan" flexDirection="column" paddingX={1}>
+            <PanelTitle title="Directories" hint="Enter open" />
+            <DirectoryList
+              groups={rowsToRender as SessionDirectoryGroup[]}
+              selectedIndex={selectedDirectoryIndex}
+              windowStart={windowStart}
+              columns={columns - 6}
+            />
+          </Box>
         ) : (
-          <SessionList
-            sessions={rowsToRender as CodexSession[]}
-            selectedIndex={selectedIndex}
-            windowStart={windowStart}
-            columns={columns}
-          />
+          <Box borderStyle="round" borderColor="cyan" flexDirection="column" paddingX={1}>
+            <PanelTitle title="Sessions" hint="Enter resume" />
+            <SessionList
+              sessions={rowsToRender as CodexSession[]}
+              selectedIndex={selectedSessionIndex}
+              windowStart={windowStart}
+              columns={columns - 6}
+            />
+          </Box>
         )}
 
         {!isWideLayout && mode === 'sessions' ? (
-          <PreviewPanel session={selectedSession} columns={columns - 4} />
+          <PreviewPanel session={selectedSession} columns={columns - 4} rows={compactPreviewRows} />
         ) : undefined}
       </Box>
 
       <Footer
         mode={mode}
+        columns={columns}
         isConfirmingDelete={Boolean(deleteCandidate)}
         isConfirmingDangerousResume={Boolean(dangerousResumeCandidate)}
       />
@@ -320,13 +344,13 @@ function WideCommandCenter({
 }) {
   const leftWidth = Math.max(62, Math.floor(columns * 0.58));
   const rightWidth = Math.max(38, columns - leftWidth - 1);
-  const panelRows = Math.max(4, Math.floor((rows - 9) / 2));
+  const panelRows = Math.max(4, Math.floor((rows - 3) / 2));
   const safeDirectoryIndex = Math.max(0, selectedDirectoryIndex);
   const directoryWindowStart = calculateWindowStart(safeDirectoryIndex, groups.length, panelRows);
   const sessionWindowStart = calculateWindowStart(selectedSessionIndex, sessions.length, panelRows);
 
   return (
-    <Box gap={1}>
+    <Box gap={1} height={rows}>
       <Box flexDirection="column" width={leftWidth}>
         <Box
           borderStyle="round"
@@ -360,14 +384,14 @@ function WideCommandCenter({
         </Box>
       </Box>
 
-      <PreviewPanel session={previewSession} columns={rightWidth - 6} boxed />
+      <PreviewPanel session={previewSession} columns={rightWidth - 6} rows={rows} boxed />
     </Box>
   );
 }
 
 function PanelTitle({title, hint}: {title: string; hint: string}) {
   return (
-    <Box justifyContent="space-between">
+    <Box width="100%" justifyContent="space-between">
       <Text color="green" bold>
         {title}
       </Text>
@@ -379,34 +403,51 @@ function PanelTitle({title, hint}: {title: string; hint: string}) {
 function PreviewPanel({
   session,
   columns,
+  rows,
   boxed = false
 }: {
   session: CodexSession | undefined;
   columns: number;
+  rows?: number;
   boxed?: boolean;
 }) {
+  const showPreviewDetails = !rows || rows >= 18;
+  const showPreviewNote = !rows || rows >= 22;
+  const maxPreviewExcerpts = Math.max(1, (rows ?? 10) - (showPreviewDetails ? 7 : 4));
+  const visibleExcerpts = session?.preview?.excerpts.slice(0, maxPreviewExcerpts) ?? [];
+  const hiddenExcerptCount = Math.max(0, (session?.preview?.excerpts.length ?? 0) - visibleExcerpts.length);
+
   const content = (
     <Box flexDirection="column">
       <PanelTitle title="Preview" hint="raw excerpts" />
       {session ? (
         <>
-          <Text bold>{truncate(session.title, columns)}</Text>
-          <Text color="gray">{session.id.slice(0, 8)}</Text>
+          <Text color="green" bold>
+            {truncate(session.title, columns)}
+          </Text>
+          {showPreviewDetails ? <Text color="gray">{session.id.slice(0, 8)}</Text> : undefined}
           <Box marginTop={1} flexDirection="column">
-            {session.preview?.excerpts.length ? (
-              session.preview.excerpts.map((excerpt, index) => (
-                <Text key={`${excerpt.role}-${index}`} color={excerpt.role === 'user' ? 'cyan' : 'green'}>
-                  {excerpt.role}: {truncate(excerpt.text, Math.max(12, columns - excerpt.role.length - 2))}
+            {visibleExcerpts.length ? (
+              visibleExcerpts.map((excerpt, index) => (
+                <Text key={`${excerpt.role}-${index}`} color={roleColor(excerpt.role)}>
+                  {padRight(excerpt.role, 10)}
+                  {truncate(excerpt.text, Math.max(12, columns - 10))}
                 </Text>
               ))
             ) : (
               <Text color="gray">No visible text preview in this rollout.</Text>
             )}
+            {hiddenExcerptCount > 0 ? (
+              <Text color="yellow">+ {hiddenExcerptCount} more hidden by terminal height</Text>
+            ) : undefined}
           </Box>
-          <Box marginTop={1} flexDirection="column">
-            <Text color="gray">cwd: {truncate(projectLabel(session.cwd), Math.max(12, columns - 5))}</Text>
-            <Text color="gray">updated: {formatDate(session.updatedAt)}</Text>
-          </Box>
+          {showPreviewDetails ? (
+            <Box marginTop={1} flexDirection="column">
+              <Text color="cyan">cwd: {truncate(projectLabel(session.cwd), Math.max(12, columns - 5))}</Text>
+              <Text color="gray">updated: {formatDate(session.updatedAt)}</Text>
+              {showPreviewNote ? <Text color="yellow">Raw preview only. No generated summary.</Text> : undefined}
+            </Box>
+          ) : undefined}
         </>
       ) : (
         <Text color="gray">Select a session to preview.</Text>
@@ -416,17 +457,21 @@ function PreviewPanel({
 
   if (!boxed) {
     return (
-      <Box borderStyle="round" borderColor="gray" flexDirection="column" marginTop={1} paddingX={1}>
+      <Box borderStyle="round" borderColor="gray" flexDirection="column" marginTop={1} height={rows} paddingX={1}>
         {content}
       </Box>
     );
   }
 
   return (
-    <Box borderStyle="round" borderColor="green" flexDirection="column" width={columns + 6} paddingX={1}>
+    <Box borderStyle="round" borderColor="green" flexDirection="column" width={columns + 6} height={rows} paddingX={1}>
       {content}
     </Box>
   );
+}
+
+function roleColor(role: 'user' | 'assistant'): 'cyan' | 'magenta' {
+  return role === 'user' ? 'cyan' : 'magenta';
 }
 
 function DangerousResumeConfirmation({session}: {session: CodexSession}) {
@@ -584,10 +629,12 @@ function SessionRow({session, isSelected, columns}: {session: CodexSession; isSe
 
 function Footer({
   mode,
+  columns,
   isConfirmingDelete,
   isConfirmingDangerousResume
 }: {
   mode: ViewMode;
+  columns: number;
   isConfirmingDelete: boolean;
   isConfirmingDangerousResume: boolean;
 }) {
@@ -596,8 +643,14 @@ function Footer({
     : isConfirmingDelete
       ? 'Enter confirm delete   n/Esc cancel'
       : mode === 'directories'
-        ? 'Enter open   j/k move   / search directories   q quit'
-        : 'Enter resume   ! unsafe resume   f fork   d delete   Esc back   j/k move   / search sessions   q quit';
+        ? columns < 90
+          ? 'Enter open   / search   q quit'
+          : 'Enter open   j/k move   / search directories   q quit'
+        : columns < 78
+          ? 'Enter resume   Esc back   / search   q quit'
+          : columns < 90
+            ? 'Enter resume   ! unsafe   f fork   d delete   Esc back   / search   q quit'
+            : 'Enter resume   ! unsafe resume   f fork   d delete   Esc back   j/k move   / search sessions   q quit';
 
   return (
     <Box marginTop={1}>

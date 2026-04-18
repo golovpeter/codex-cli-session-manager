@@ -1,0 +1,42 @@
+<svg width="920" height="720" viewBox="0 0 920 720" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Compact cdx-sessions terminal screenshot">
+  <defs>
+    <linearGradient id="compactBg" x1="0" y1="0" x2="920" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#06131a"/>
+      <stop offset="0.6" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#18181b"/>
+    </linearGradient>
+    <filter id="compactShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity="0.36"/>
+    </filter>
+  </defs>
+  <rect width="920" height="720" fill="#020617"/>
+  <rect x="42" y="34" width="836" height="652" rx="18" fill="url(#compactBg)" stroke="#243244" filter="url(#compactShadow)"/>
+  <rect x="42" y="34" width="836" height="46" rx="18" fill="#0b1220"/>
+  <circle cx="72" cy="57" r="7" fill="#fb7185"/>
+  <circle cx="97" cy="57" r="7" fill="#facc15"/>
+  <circle cx="122" cy="57" r="7" fill="#34d399"/>
+  <text x="460" y="63" text-anchor="middle" fill="#94a3b8" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="15">cdx-sessions</text>
+
+  <rect x="72" y="104" width="776" height="86" rx="10" fill="#0b1220" stroke="#22c55e" stroke-width="1.4"/>
+  <text x="96" y="136" fill="#34d399" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="20" font-weight="700">cdx-sessions</text>
+  <text x="96" y="163" fill="#e5e7eb" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="17">~/Projects/cdx-sessions</text>
+  <text x="96" y="184" fill="#94a3b8" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="15">Search:  | 1 dirs | 8 sessions</text>
+
+  <rect x="72" y="214" width="776" height="172" rx="10" fill="#0b1220" stroke="#06b6d4" stroke-width="1.4"/>
+  <text x="96" y="246" fill="#34d399" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700">Sessions</text>
+  <text x="810" y="246" text-anchor="end" fill="#64748b" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="15">Enter resume</text>
+  <rect x="90" y="265" width="740" height="28" rx="5" fill="#22d3ee" fill-opacity="0.18"/>
+  <text x="100" y="284" fill="#e0f2fe" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="15">&gt; 2026-04-18 12:45  Refresh CLI interface for Codex sessions</text>
+  <text x="100" y="318" fill="#cbd5e1" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="15">  2026-04-18 10:15  Add responsive preview TUI</text>
+  <text x="100" y="352" fill="#cbd5e1" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="15">  2026-04-17 09:20  Publish npm package</text>
+
+  <rect x="72" y="410" width="776" height="198" rx="10" fill="#0b1220" stroke="#334155" stroke-width="1.4"/>
+  <text x="96" y="442" fill="#34d399" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700">Preview</text>
+  <text x="810" y="442" text-anchor="end" fill="#64748b" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="15">raw excerpts</text>
+  <text x="96" y="478" fill="#86efac" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="16" font-weight="700">Refresh CLI interface for Codex sessions</text>
+  <text x="96" y="520" fill="#67e8f9" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="14">user      Make the terminal interface more colorful and easier to scan.</text>
+  <text x="96" y="550" fill="#f0abfc" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="14">assistant I will keep the Ink stack, add panels, and expand raw preview.</text>
+  <text x="96" y="580" fill="#67e8f9" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="14">user      Can we show more context without generated summaries?</text>
+
+  <text x="72" y="646" fill="#94a3b8" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="15">Enter resume   ! unsafe   f fork   d delete   Esc back   / search   q quit</text>
+</svg>

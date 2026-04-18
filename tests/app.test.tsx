@@ -34,6 +34,16 @@ const previewSession = {
   }
 } satisfies CodexSession;
 
+const longPreviewSession = {
+  ...session,
+  preview: {
+    excerpts: Array.from({length: 8}, (_, index) => ({
+      role: index % 2 === 0 ? ('user' as const) : ('assistant' as const),
+      text: `preview line ${index + 1}`
+    }))
+  }
+} satisfies CodexSession;
+
 const noop = () => undefined;
 
 describe('App', () => {
@@ -84,6 +94,24 @@ describe('App', () => {
     expect(lastFrame()).toContain('Enter resume');
   });
 
+  test('returns to the previously selected directory after leaving sessions', async () => {
+    const {lastFrame, stdin} = render(
+      <App sessions={[session, secondSession]} currentCwd="/workspace/codex-session-manager" onAction={noop} />
+    );
+
+    stdin.write('j');
+    await waitForInput();
+    stdin.write('\r');
+    await waitForInput();
+    stdin.write('b');
+    await waitForInput();
+    stdin.write('\r');
+    await waitForInput();
+
+    expect(lastFrame()).toContain('Fix Keycloak CA mount');
+    expect(lastFrame()).not.toContain('Build Codex session navigator');
+  });
+
   test('renders preview below sessions in compact layout', async () => {
     const {lastFrame, stdin} = render(
       <App sessions={[previewSession]} currentCwd="/workspace/codex-session-manager" onAction={noop} />
@@ -95,6 +123,21 @@ describe('App', () => {
     expect(lastFrame()).toContain('Preview');
     expect(lastFrame()).toContain('Make the terminal interface more colorful.');
     expect(lastFrame()).toContain('raw excerpts');
+  });
+
+  test('uses available wide preview space for a larger session preview', () => {
+    const {lastFrame} = render(
+      <App
+        sessions={[longPreviewSession]}
+        currentCwd="/workspace/codex-session-manager"
+        onAction={noop}
+        terminalSize={{columns: 140, rows: 34}}
+      />
+    );
+
+    expect(lastFrame()).toContain('preview line 1');
+    expect(lastFrame()).toContain('preview line 8');
+    expect(lastFrame()).toContain('Raw preview only');
   });
 
   test('renders an empty state when no sessions match', () => {

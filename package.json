@@ -1,9 +1,17 @@
 {
   "name": "cdx-sessions",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Interactive CLI for finding and resuming Codex sessions across projects.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/golovpeter/codex-cli-session-manager.git"
+  },
+  "bugs": {
+    "url": "https://github.com/golovpeter/codex-cli-session-manager/issues"
+  },
+  "homepage": "https://github.com/golovpeter/codex-cli-session-manager#readme",
   "keywords": [
     "codex",
     "cli",
@@ -16,7 +24,8 @@
     "cdx-sessions": "dist/cli.js"
   },
   "files": [
-    ".gitignore",
+    "assets/screenshots",
+    "CONTRIBUTING.md",
     "dist"
   ],
   "scripts": {

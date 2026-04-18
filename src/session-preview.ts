@@ -19,9 +19,9 @@ export type SessionPreviewOptions = {
 };
 
 const defaultPreviewOptions = {
-  maxExcerpts: 3,
+  maxExcerpts: 8,
   maxExcerptLength: 160,
-  maxLines: 400
+  maxLines: 1200
 } satisfies Required<SessionPreviewOptions>;
 
 export async function readSessionPreview(path: string, options: SessionPreviewOptions = {}): Promise<SessionPreview> {
@@ -66,13 +66,23 @@ export function extractSessionPreviewFromLines(
     }
 
     excerpts.push(excerpt);
-
-    if (excerpts.length >= resolvedOptions.maxExcerpts) {
-      break;
-    }
   }
 
-  return {excerpts};
+  return {excerpts: selectPreviewExcerpts(excerpts, resolvedOptions.maxExcerpts)};
+}
+
+function selectPreviewExcerpts(
+  excerpts: readonly SessionPreviewExcerpt[],
+  maxExcerpts: number
+): SessionPreviewExcerpt[] {
+  if (excerpts.length <= maxExcerpts) {
+    return [...excerpts];
+  }
+
+  const firstCount = Math.ceil(maxExcerpts / 2);
+  const lastCount = maxExcerpts - firstCount;
+
+  return [...excerpts.slice(0, firstCount), ...excerpts.slice(excerpts.length - lastCount)];
 }
 
 function extractExcerptFromLine(line: string, maxExcerptLength: number): SessionPreviewExcerpt | undefined {

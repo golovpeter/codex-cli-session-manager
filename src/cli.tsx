@@ -18,7 +18,6 @@ type CliOptions = {
 program
   .name('cdx-sessions')
   .description('Interactive Codex session navigator')
-  .version('0.1.0')
   .option('--codex-home <path>', 'Path to the Codex home directory')
   .option('--cwd <path>', 'Current working directory used for the scope toggle', process.cwd())
   .option('--include-subagents', 'Show sessions created by delegated Codex subagents')
@@ -65,6 +64,13 @@ program
         process.exitCode = result.exitCode;
       }
     }
+  });
+
+program
+  .command('version')
+  .description('Print the cdx-sessions version')
+  .action(() => {
+    console.log('Version: 0.2.0');
   });
 
 await program.parseAsync();
