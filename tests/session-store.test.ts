@@ -133,6 +133,52 @@ describe('loadCodexSessions', () => {
     ]);
   });
 
+  test('adds a raw preview when rollout files contain visible user and assistant text', async () => {
+    const codexHome = await createCodexHome();
+    const sessionId = '019d9607-c48c-77e2-b9d9-6e342ff7b8bc';
+    const sessionDir = join(codexHome, 'sessions', '2026', '04', '16');
+
+    await mkdir(sessionDir, {recursive: true});
+    await writeFile(join(codexHome, 'session_index.jsonl'), '');
+    await writeFile(
+      join(sessionDir, `rollout-2026-04-16T14-23-04-${sessionId}.jsonl`),
+      [
+        JSON.stringify({
+          timestamp: '2026-04-16T11:23:10.000Z',
+          type: 'session_meta',
+          payload: {
+            id: sessionId,
+            timestamp: '2026-04-16T11:23:04.729Z',
+            cwd: '/workspace/codex-session-manager'
+          }
+        }),
+        JSON.stringify({
+          type: 'response_item',
+          payload: {
+            role: 'user',
+            content: [{type: 'input_text', text: 'Make the CLI easier to scan.'}]
+          }
+        }),
+        JSON.stringify({
+          type: 'response_item',
+          payload: {
+            role: 'assistant',
+            content: [{type: 'output_text', text: 'I will add a responsive preview panel.'}]
+          }
+        })
+      ].join('\n')
+    );
+
+    const sessions = await loadCodexSessions({codexHome});
+
+    expect(sessions[0]?.preview).toEqual({
+      excerpts: [
+        {role: 'user', text: 'Make the CLI easier to scan.'},
+        {role: 'assistant', text: 'I will add a responsive preview panel.'}
+      ]
+    });
+  });
+
   test('hides subagent rollout sessions by default', async () => {
     const codexHome = await createCodexHome();
     const parentSessionId = '019d95fa-8714-7a63-880b-31026a74ff9b';

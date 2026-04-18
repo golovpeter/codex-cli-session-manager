@@ -24,15 +24,20 @@ export type AppProps = {
   sessions: readonly CodexSession[];
   currentCwd: string;
   onAction: (action: AppAction) => AppActionResult | void | Promise<AppActionResult | void>;
+  terminalSize?: {
+    columns: number;
+    rows: number;
+  };
 };
 
 type ViewMode = 'directories' | 'sessions';
 
-export function App({sessions, currentCwd, onAction}: AppProps) {
+export function App({sessions, currentCwd, onAction, terminalSize}: AppProps) {
   const app = useApp();
   const windowSize = useWindowSize();
-  const columns = Math.max(60, windowSize.columns ?? 100);
-  const rows = Math.max(12, windowSize.rows ?? 24);
+  const columns = Math.max(60, terminalSize?.columns ?? windowSize.columns ?? 100);
+  const rows = Math.max(12, terminalSize?.rows ?? windowSize.rows ?? 24);
+  const isWideLayout = columns >= 120;
   const visibleRows = Math.max(4, rows - 8);
   const [localSessions, setLocalSessions] = useState(() => [...sessions]);
   const [mode, setMode] = useState<ViewMode>('directories');
@@ -66,8 +71,12 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
   }, [localSessions, mode, query]);
 
   const selectedGroup = useMemo(() => {
+    if (mode === 'directories') {
+      return directoryGroups[selectedIndex];
+    }
+
     const group = directoryGroups.find(item => item.cwd === selectedCwd);
-    if (group || !selectedCwd || mode !== 'sessions') {
+    if (group || !selectedCwd) {
       return group;
     }
 
@@ -76,7 +85,7 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
       latestUpdatedAt: new Date(0),
       sessions: []
     };
-  }, [directoryGroups, mode, selectedCwd]);
+  }, [directoryGroups, mode, selectedCwd, selectedIndex]);
 
   const visibleSessions = useMemo(() => {
     if (!selectedGroup) {
@@ -227,6 +236,7 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
 
   const windowStart = calculateWindowStart(selectedIndex, currentRows.length, visibleRows);
   const rowsToRender = currentRows.slice(windowStart, windowStart + visibleRows);
+  const selectedSession = visibleSessions[mode === 'sessions' ? selectedIndex : 0];
 
   return (
     <Box flexDirection="column" width={columns} minHeight={rows}>
@@ -246,7 +256,20 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
 
         {dangerousResumeCandidate ? <DangerousResumeConfirmation session={dangerousResumeCandidate} /> : undefined}
 
-        {mode === 'directories' ? (
+        {isWideLayout ? (
+          <WideCommandCenter
+            groups={directoryGroups}
+            sessions={visibleSessions}
+            mode={mode}
+            selectedDirectoryIndex={
+              mode === 'directories' ? selectedIndex : directoryGroups.findIndex(group => group.cwd === selectedCwd)
+            }
+            selectedSessionIndex={mode === 'sessions' ? selectedIndex : 0}
+            previewSession={selectedSession}
+            columns={columns}
+            rows={rows}
+          />
+        ) : mode === 'directories' ? (
           <DirectoryList
             groups={rowsToRender as SessionDirectoryGroup[]}
             selectedIndex={selectedIndex}
@@ -261,6 +284,10 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
             columns={columns}
           />
         )}
+
+        {!isWideLayout && mode === 'sessions' ? (
+          <PreviewPanel session={selectedSession} columns={columns - 4} />
+        ) : undefined}
       </Box>
 
       <Footer
@@ -268,6 +295,136 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
         isConfirmingDelete={Boolean(deleteCandidate)}
         isConfirmingDangerousResume={Boolean(dangerousResumeCandidate)}
       />
+    </Box>
+  );
+}
+
+function WideCommandCenter({
+  groups,
+  sessions,
+  mode,
+  selectedDirectoryIndex,
+  selectedSessionIndex,
+  previewSession,
+  columns,
+  rows
+}: {
+  groups: SessionDirectoryGroup[];
+  sessions: CodexSession[];
+  mode: ViewMode;
+  selectedDirectoryIndex: number;
+  selectedSessionIndex: number;
+  previewSession: CodexSession | undefined;
+  columns: number;
+  rows: number;
+}) {
+  const leftWidth = Math.max(62, Math.floor(columns * 0.58));
+  const rightWidth = Math.max(38, columns - leftWidth - 1);
+  const panelRows = Math.max(4, Math.floor((rows - 9) / 2));
+  const safeDirectoryIndex = Math.max(0, selectedDirectoryIndex);
+  const directoryWindowStart = calculateWindowStart(safeDirectoryIndex, groups.length, panelRows);
+  const sessionWindowStart = calculateWindowStart(selectedSessionIndex, sessions.length, panelRows);
+
+  return (
+    <Box gap={1}>
+      <Box flexDirection="column" width={leftWidth}>
+        <Box
+          borderStyle="round"
+          borderColor={mode === 'directories' ? 'cyan' : 'gray'}
+          flexDirection="column"
+          paddingX={1}
+        >
+          <PanelTitle title="Directories" hint="Enter open" />
+          <DirectoryList
+            groups={groups.slice(directoryWindowStart, directoryWindowStart + panelRows)}
+            selectedIndex={safeDirectoryIndex}
+            windowStart={directoryWindowStart}
+            columns={leftWidth - 6}
+          />
+        </Box>
+
+        <Box
+          borderStyle="round"
+          borderColor={mode === 'sessions' ? 'cyan' : 'gray'}
+          flexDirection="column"
+          marginTop={1}
+          paddingX={1}
+        >
+          <PanelTitle title="Sessions" hint="Enter resume" />
+          <SessionList
+            sessions={sessions.slice(sessionWindowStart, sessionWindowStart + panelRows)}
+            selectedIndex={selectedSessionIndex}
+            windowStart={sessionWindowStart}
+            columns={leftWidth - 6}
+          />
+        </Box>
+      </Box>
+
+      <PreviewPanel session={previewSession} columns={rightWidth - 6} boxed />
+    </Box>
+  );
+}
+
+function PanelTitle({title, hint}: {title: string; hint: string}) {
+  return (
+    <Box justifyContent="space-between">
+      <Text color="green" bold>
+        {title}
+      </Text>
+      <Text color="gray">{hint}</Text>
+    </Box>
+  );
+}
+
+function PreviewPanel({
+  session,
+  columns,
+  boxed = false
+}: {
+  session: CodexSession | undefined;
+  columns: number;
+  boxed?: boolean;
+}) {
+  const content = (
+    <Box flexDirection="column">
+      <PanelTitle title="Preview" hint="raw excerpts" />
+      {session ? (
+        <>
+          <Text bold>{truncate(session.title, columns)}</Text>
+          <Text color="gray">{session.id.slice(0, 8)}</Text>
+          <Box marginTop={1} flexDirection="column">
+            {session.preview?.excerpts.length ? (
+              session.preview.excerpts.map((excerpt, index) => (
+                <Text key={`${excerpt.role}-${index}`} color={excerpt.role === 'user' ? 'cyan' : 'green'}>
+                  {excerpt.role}: {truncate(excerpt.text, Math.max(12, columns - excerpt.role.length - 2))}
+                </Text>
+              ))
+            ) : (
+              <Text color="gray">No visible text preview in this rollout.</Text>
+            )}
+          </Box>
+          <Box marginTop={1} flexDirection="column">
+            <Text color="gray">cwd: {truncate(projectLabel(session.cwd), Math.max(12, columns - 5))}</Text>
+            <Text color="gray">updated: {formatDate(session.updatedAt)}</Text>
+          </Box>
+        </>
+      ) : (
+        <Text color="gray">Select a session to preview.</Text>
+      )}
+    </Box>
+  );
+
+  if (!boxed) {
+    return (
+      <Box borderStyle="round" borderColor="gray" flexDirection="column" marginTop={1} paddingX={1}>
+        {content}
+      </Box>
+    );
+  }
+
+  return (
+    <Box borderStyle="round" borderColor="green" flexDirection="column" width={columns + 6} paddingX={1}>
+      {content}
     </Box>
   );
 }
@@ -319,8 +476,10 @@ function Header({
   const title = mode === 'directories' ? 'Choose a directory' : projectLabel(selectedGroup?.cwd);
 
   return (
-    <Box flexDirection="column" marginBottom={1}>
-      <Text bold>Codex Sessions</Text>
+    <Box flexDirection="column" marginBottom={1} borderStyle="round" borderColor="green" paddingX={1}>
+      <Text bold color="green">
+        cdx-sessions
+      </Text>
       <Text>{title}</Text>
       <Text color="gray">
         Search: {isSearching ? <Text color="cyan">{query || ' '}</Text> : query || ' '} | {totalDirectories} dirs |{' '}

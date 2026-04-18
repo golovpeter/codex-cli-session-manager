@@ -4,6 +4,7 @@ import {homedir} from 'node:os';
 import {basename, join} from 'node:path';
 import {createInterface} from 'node:readline/promises';
 import {z} from 'zod';
+import {readSessionPreview, type SessionPreview} from './session-preview.js';
 
 const sessionIndexRowSchema = z.object({
   id: z.string().min(1),
@@ -39,6 +40,7 @@ type SessionLogMetadata = {
   modelProvider: string | undefined;
   logPath: string;
   isSubagent: boolean;
+  preview: SessionPreview | undefined;
 };
 
 export type CodexSession = {
@@ -51,6 +53,7 @@ export type CodexSession = {
   modelProvider: string | undefined;
   logPath: string | undefined;
   available: boolean;
+  preview?: SessionPreview;
 };
 
 export type LoadCodexSessionsOptions = {
@@ -89,7 +92,8 @@ export async function loadCodexSessions(options: LoadCodexSessionsOptions = {}):
         originator: metadata?.originator,
         modelProvider: metadata?.modelProvider,
         logPath: metadata?.logPath,
-        available: Boolean(metadata)
+        available: Boolean(metadata),
+        ...(metadata?.preview ? {preview: metadata.preview} : {})
       };
     }),
     ...visibleLogMetadata
@@ -103,7 +107,8 @@ export async function loadCodexSessions(options: LoadCodexSessionsOptions = {}):
         originator: metadata.originator,
         modelProvider: metadata.modelProvider,
         logPath: metadata.logPath,
-        available: true
+        available: true,
+        ...(metadata.preview ? {preview: metadata.preview} : {})
       }))
   ];
 
@@ -121,6 +126,7 @@ async function readAllSessionLogMetadata(paths: readonly string[]): Promise<Sess
 
       const timestamp = metadata.payload.timestamp ?? metadata.timestamp;
       const updatedAt = timestamp ? new Date(timestamp) : undefined;
+      const preview = await readSessionPreview(path);
 
       return {
         id,
@@ -130,7 +136,8 @@ async function readAllSessionLogMetadata(paths: readonly string[]): Promise<Sess
         originator: metadata.payload.originator ?? undefined,
         modelProvider: metadata.payload.model_provider ?? undefined,
         logPath: path,
-        isSubagent: isSubagentSource(metadata.payload.source)
+        isSubagent: isSubagentSource(metadata.payload.source),
+        preview: preview.excerpts.length > 0 ? preview : undefined
       };
     })
   );

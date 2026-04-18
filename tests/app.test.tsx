@@ -24,15 +24,43 @@ const secondSession = {
   updatedAt: new Date('2026-04-15T11:48:27.097Z')
 } satisfies CodexSession;
 
+const previewSession = {
+  ...session,
+  preview: {
+    excerpts: [
+      {role: 'user', text: 'Make the terminal interface more colorful.'},
+      {role: 'assistant', text: 'I will add a responsive preview panel.'}
+    ]
+  }
+} satisfies CodexSession;
+
 const noop = () => undefined;
 
 describe('App', () => {
+  test('renders a wide command center with directories, sessions, and preview', () => {
+    const props = {
+      sessions: [previewSession, secondSession],
+      currentCwd: '/workspace/codex-session-manager',
+      onAction: noop,
+      terminalSize: {columns: 140, rows: 32}
+    };
+
+    const {lastFrame} = render(<App {...props} />);
+
+    expect(lastFrame()).toContain('Directories');
+    expect(lastFrame()).toContain('Sessions');
+    expect(lastFrame()).toContain('Preview');
+    expect(lastFrame()).toContain('Build Codex session navigator');
+    expect(lastFrame()).toContain('Make the terminal interface more colorful.');
+    expect(lastFrame()).toContain('responsive preview panel');
+  });
+
   test('renders directory choices before session choices', () => {
     const {lastFrame} = render(
       <App sessions={[session, secondSession]} currentCwd="/workspace/codex-session-manager" onAction={noop} />
     );
 
-    expect(lastFrame()).toContain('Codex Sessions');
+    expect(lastFrame()).toContain('cdx-sessions');
     expect(lastFrame()).toContain('Choose a directory');
     expect(lastFrame()).toContain('codex-session-manager');
     expect(lastFrame()).toContain('actual');
@@ -54,6 +82,19 @@ describe('App', () => {
     expect(lastFrame()).toContain('Build Codex session navigator');
     expect(lastFrame()).toContain('Esc back');
     expect(lastFrame()).toContain('Enter resume');
+  });
+
+  test('renders preview below sessions in compact layout', async () => {
+    const {lastFrame, stdin} = render(
+      <App sessions={[previewSession]} currentCwd="/workspace/codex-session-manager" onAction={noop} />
+    );
+
+    stdin.write('\r');
+    await waitForInput();
+
+    expect(lastFrame()).toContain('Preview');
+    expect(lastFrame()).toContain('Make the terminal interface more colorful.');
+    expect(lastFrame()).toContain('raw excerpts');
   });
 
   test('renders an empty state when no sessions match', () => {
