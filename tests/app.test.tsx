@@ -24,14 +24,12 @@ const secondSession = {
   updatedAt: new Date('2026-04-15T11:48:27.097Z')
 } satisfies CodexSession;
 
+const noop = () => undefined;
+
 describe('App', () => {
   test('renders directory choices before session choices', () => {
     const {lastFrame} = render(
-      <App
-        sessions={[session, secondSession]}
-        currentCwd="/workspace/codex-session-manager"
-        onAction={() => {}}
-      />
+      <App sessions={[session, secondSession]} currentCwd="/workspace/codex-session-manager" onAction={noop} />
     );
 
     expect(lastFrame()).toContain('Codex Sessions');
@@ -45,7 +43,7 @@ describe('App', () => {
 
   test('opens the selected directory before showing its available sessions', async () => {
     const {lastFrame, stdin} = render(
-      <App sessions={[session]} currentCwd="/workspace/codex-session-manager" onAction={() => {}} />
+      <App sessions={[session]} currentCwd="/workspace/codex-session-manager" onAction={noop} />
     );
 
     stdin.write('\r');
@@ -59,7 +57,7 @@ describe('App', () => {
   });
 
   test('renders an empty state when no sessions match', () => {
-    const {lastFrame} = render(<App sessions={[]} currentCwd="/tmp" onAction={() => {}} />);
+    const {lastFrame} = render(<App sessions={[]} currentCwd="/tmp" onAction={noop} />);
 
     expect(lastFrame()).toContain('No directories found');
   });

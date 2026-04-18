@@ -9,6 +9,12 @@ import {deleteCodexSession} from './session-delete.js';
 
 const program = new Command();
 
+type CliOptions = {
+  codexHome?: string;
+  cwd: string;
+  includeSubagents?: boolean;
+};
+
 program
   .name('cdx-sessions')
   .description('Interactive Codex session navigator')
@@ -16,7 +22,7 @@ program
   .option('--codex-home <path>', 'Path to the Codex home directory')
   .option('--cwd <path>', 'Current working directory used for the scope toggle', process.cwd())
   .option('--include-subagents', 'Show sessions created by delegated Codex subagents')
-  .action(async options => {
+  .action(async (options: CliOptions) => {
     const sessions = await loadCodexSessions({
       codexHome: options.codexHome,
       includeSubagents: options.includeSubagents

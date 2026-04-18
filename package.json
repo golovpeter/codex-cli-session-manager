@@ -23,6 +23,10 @@
     "clean": "node scripts/clean-dist.mjs",
     "build": "npm run clean && tsc -p tsconfig.build.json && node scripts/chmod-bin.mjs",
     "dev": "tsx src/cli.tsx",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
     "prepack": "npm run build",
     "prepublishOnly": "npm test && npm run typecheck",
     "test": "vitest run",
@@ -42,11 +46,18 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^25.0.0",
     "@types/react": "^19.2.7",
+    "eslint": "^10.2.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-security": "^4.0.0",
+    "globals": "^17.5.0",
     "ink-testing-library": "^4.0.0",
+    "prettier": "^3.8.3",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.58.2",
     "vitest": "^4.0.16"
   }
 }

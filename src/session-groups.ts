@@ -6,9 +6,7 @@ export type SessionDirectoryGroup = {
   sessions: CodexSession[];
 };
 
-export function groupSessionsByDirectory(
-  sessions: readonly CodexSession[]
-): SessionDirectoryGroup[] {
+export function groupSessionsByDirectory(sessions: readonly CodexSession[]): SessionDirectoryGroup[] {
   const groups = new Map<string, CodexSession[]>();
 
   for (const session of sessions) {

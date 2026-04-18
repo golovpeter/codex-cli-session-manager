@@ -11,9 +11,7 @@ const sessionIndexRowSchema = z.object({
   updated_at: z.string().min(1)
 });
 
-const sessionSourceSchema = z
-  .union([z.string(), z.object({subagent: z.unknown().optional()}).passthrough()])
-  .nullish();
+const sessionSourceSchema = z.union([z.string(), z.object({subagent: z.unknown().optional()}).passthrough()]).nullish();
 
 const sessionMetaLineSchema = z.object({
   timestamp: z.string().nullish(),
@@ -60,9 +58,7 @@ export type LoadCodexSessionsOptions = {
   includeSubagents?: boolean;
 };
 
-export async function loadCodexSessions(
-  options: LoadCodexSessionsOptions = {}
-): Promise<CodexSession[]> {
+export async function loadCodexSessions(options: LoadCodexSessionsOptions = {}): Promise<CodexSession[]> {
   const codexHome = options.codexHome ?? join(homedir(), '.codex');
   const includeSubagents = options.includeSubagents ?? false;
   const indexRows = await readSessionIndex(join(codexHome, 'session_index.jsonl'));
@@ -78,9 +74,7 @@ export async function loadCodexSessions(
   const visibleIndexRows = includeSubagents
     ? indexRows
     : indexRows.filter(row => !metadataById.get(row.id)?.isSubagent);
-  const visibleLogMetadata = includeSubagents
-    ? logMetadata
-    : logMetadata.filter(metadata => !metadata.isSubagent);
+  const visibleLogMetadata = includeSubagents ? logMetadata : logMetadata.filter(metadata => !metadata.isSubagent);
 
   const sessions = [
     ...visibleIndexRows.map(row => {
@@ -130,8 +124,7 @@ async function readAllSessionLogMetadata(paths: readonly string[]): Promise<Sess
 
       return {
         id,
-        updatedAt:
-          updatedAt && !Number.isNaN(updatedAt.getTime()) ? updatedAt : parseDateFromPath(path),
+        updatedAt: updatedAt && !Number.isNaN(updatedAt.getTime()) ? updatedAt : parseDateFromPath(path),
         cwd: metadata.payload.cwd ?? undefined,
         cliVersion: metadata.payload.cli_version ?? undefined,
         originator: metadata.payload.originator ?? undefined,
@@ -174,10 +167,7 @@ async function readSessionIndex(path: string): Promise<SessionIndexRow[]> {
     });
 }
 
-async function readSessionMetadata(
-  path: string,
-  expectedSessionId?: string
-): Promise<SessionMetaLine | undefined> {
+async function readSessionMetadata(path: string, expectedSessionId?: string): Promise<SessionMetaLine | undefined> {
   const stream = createReadStream(path, {encoding: 'utf8'});
   const lines = createInterface({input: stream, crlfDelay: Infinity});
 
@@ -217,11 +207,11 @@ function metadataMatchesSession(metadata: SessionMetaLine, expectedSessionId: st
 }
 
 function parseSessionIdFromPath(path: string): string | undefined {
-  return basename(path).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)?.[0];
+  return /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/.exec(basename(path))?.[0];
 }
 
 function parseDateFromPath(path: string): Date {
-  const match = basename(path).match(/rollout-(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})/);
+  const match = /rollout-(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})/.exec(basename(path));
   if (!match) {
     return new Date(0);
   }

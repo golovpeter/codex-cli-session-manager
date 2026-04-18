@@ -2,7 +2,9 @@ import {describe, expect, test} from 'vitest';
 import {groupSessionsByDirectory} from '../src/session-groups.js';
 import type {CodexSession} from '../src/session-store.js';
 
-function session(overrides: Partial<CodexSession> & Pick<CodexSession, 'id' | 'title' | 'cwd' | 'updatedAt'>): CodexSession {
+function session(
+  overrides: Partial<CodexSession> & Pick<CodexSession, 'id' | 'title' | 'cwd' | 'updatedAt'>
+): CodexSession {
   return {
     cliVersion: undefined,
     originator: undefined,

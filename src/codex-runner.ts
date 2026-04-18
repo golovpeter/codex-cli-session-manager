@@ -25,9 +25,7 @@ export type CodexExecutor = (args: string[]) => Promise<CodexExecutorResult>;
 
 export function buildCodexArgs(action: CodexAction): string[] {
   return [
-    ...(action.dangerouslyBypassApprovalsAndSandbox
-      ? ['--dangerously-bypass-approvals-and-sandbox']
-      : []),
+    ...(action.dangerouslyBypassApprovalsAndSandbox ? ['--dangerously-bypass-approvals-and-sandbox'] : []),
     action.kind,
     action.sessionId,
     ...(action.prompt ? [action.prompt] : [])

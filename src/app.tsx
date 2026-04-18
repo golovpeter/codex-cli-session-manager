@@ -29,7 +29,7 @@ export type AppProps = {
 type ViewMode = 'directories' | 'sessions';
 
 export function App({sessions, currentCwd, onAction}: AppProps) {
-  const {exit} = useApp();
+  const app = useApp();
   const windowSize = useWindowSize();
   const columns = Math.max(60, windowSize.columns ?? 100);
   const rows = Math.max(12, windowSize.rows ?? 24);
@@ -44,6 +44,15 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
   const [dangerousResumeCandidate, setDangerousResumeCandidate] = useState<CodexSession | undefined>();
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
+
+  function exit(): void {
+    app.exit();
+  }
+
+  function dispatchActionAndExit(action: Extract<AppAction, {kind: 'resume' | 'fork'}>): void {
+    void Promise.resolve(onAction(action)).catch(() => undefined);
+    exit();
+  }
 
   const directoryGroups = useMemo(() => {
     const groups = groupSessionsByDirectory(localSessions);
@@ -115,12 +124,11 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
 
     if (dangerousResumeCandidate) {
       if (key.return) {
-        onAction({
+        dispatchActionAndExit({
           kind: 'resume',
           sessionId: dangerousResumeCandidate.id,
           dangerouslyBypassApprovalsAndSandbox: true
         });
-        exit();
         return;
       }
 
@@ -176,14 +184,12 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
     const selectedSession = visibleSessions[selectedIndex];
 
     if (key.return && selectedSession?.available) {
-      onAction({kind: 'resume', sessionId: selectedSession.id});
-      exit();
+      dispatchActionAndExit({kind: 'resume', sessionId: selectedSession.id});
       return;
     }
 
     if (input === 'f' && selectedSession?.available) {
-      onAction({kind: 'fork', sessionId: selectedSession.id});
-      exit();
+      dispatchActionAndExit({kind: 'fork', sessionId: selectedSession.id});
       return;
     }
 
@@ -202,7 +208,11 @@ export function App({sessions, currentCwd, onAction}: AppProps) {
     setIsDeleting(true);
     setErrorMessage(undefined);
 
-    const result = await onAction({kind: 'delete', sessionId: session.id, logPath: session.logPath});
+    const result = await onAction({
+      kind: 'delete',
+      sessionId: session.id,
+      logPath: session.logPath
+    });
 
     if (result?.ok === false) {
       setErrorMessage(result.message);
@@ -313,8 +323,8 @@ function Header({
       <Text bold>Codex Sessions</Text>
       <Text>{title}</Text>
       <Text color="gray">
-        Search: {isSearching ? <Text color="cyan">{query || ' '}</Text> : query || ' '} |{' '}
-        {totalDirectories} dirs | {totalSessions} sessions
+        Search: {isSearching ? <Text color="cyan">{query || ' '}</Text> : query || ' '} | {totalDirectories} dirs |{' '}
+        {totalSessions} sessions
       </Text>
     </Box>
   );
@@ -340,12 +350,7 @@ function DirectoryList({
       {groups.map((group, index) => {
         const absoluteIndex = windowStart + index;
         return (
-          <DirectoryRow
-            key={group.cwd}
-            group={group}
-            isSelected={absoluteIndex === selectedIndex}
-            columns={columns}
-          />
+          <DirectoryRow key={group.cwd} group={group} isSelected={absoluteIndex === selectedIndex} columns={columns} />
         );
       })}
     </Box>
@@ -406,15 +411,7 @@ function DirectoryRow({
   );
 }
 
-function SessionRow({
-  session,
-  isSelected,
-  columns
-}: {
-  session: CodexSession;
-  isSelected: boolean;
-  columns: number;
-}) {
+function SessionRow({session, isSelected, columns}: {session: CodexSession; isSelected: boolean; columns: number}) {
   const marker = isSelected ? '>' : ' ';
   const prefix = `${marker} ${formatDate(session.updatedAt)}  `;
 
@@ -438,10 +435,10 @@ function Footer({
   const hint = isConfirmingDangerousResume
     ? 'Enter confirm unsafe resume   n/Esc cancel'
     : isConfirmingDelete
-    ? 'Enter confirm delete   n/Esc cancel'
-    : mode === 'directories'
-      ? 'Enter open   j/k move   / search directories   q quit'
-      : 'Enter resume   ! unsafe resume   f fork   d delete   Esc back   j/k move   / search sessions   q quit';
+      ? 'Enter confirm delete   n/Esc cancel'
+      : mode === 'directories'
+        ? 'Enter open   j/k move   / search directories   q quit'
+        : 'Enter resume   ! unsafe resume   f fork   d delete   Esc back   j/k move   / search sessions   q quit';
 
   return (
     <Box marginTop={1}>
@@ -477,10 +474,7 @@ function handleSearchInput(
 }
 
 function directoryMatchesQuery(group: SessionDirectoryGroup, query: string): boolean {
-  return [group.cwd, projectLabel(group.cwd), directoryLabel(group.cwd)]
-    .join(' ')
-    .toLowerCase()
-    .includes(query);
+  return [group.cwd, projectLabel(group.cwd), directoryLabel(group.cwd)].join(' ').toLowerCase().includes(query);
 }
 
 function calculateWindowStart(selectedIndex: number, totalRows: number, visibleRows: number): number {

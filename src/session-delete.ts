@@ -13,17 +13,10 @@ export type DeleteCodexSessionResult = {
   deletedLogFile: boolean;
 };
 
-export async function deleteCodexSession(
-  options: DeleteCodexSessionOptions
-): Promise<DeleteCodexSessionResult> {
+export async function deleteCodexSession(options: DeleteCodexSessionOptions): Promise<DeleteCodexSessionResult> {
   const codexHome = options.codexHome ?? join(homedir(), '.codex');
-  const deletedIndexRows = await removeSessionFromIndex(
-    join(codexHome, 'session_index.jsonl'),
-    options.sessionId
-  );
-  const deletedLogFile = options.logPath
-    ? await deleteSessionLogFile(codexHome, options.logPath)
-    : false;
+  const deletedIndexRows = await removeSessionFromIndex(join(codexHome, 'session_index.jsonl'), options.sessionId);
+  const deletedLogFile = options.logPath ? await deleteSessionLogFile(codexHome, options.logPath) : false;
 
   return {deletedIndexRows, deletedLogFile};
 }

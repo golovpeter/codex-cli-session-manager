@@ -3,10 +3,7 @@ import {buildCodexArgs, runCodexAction} from '../src/codex-runner.js';
 
 describe('buildCodexArgs', () => {
   test('builds a resume invocation for a selected session', () => {
-    expect(buildCodexArgs({kind: 'resume', sessionId: 'session-123'})).toEqual([
-      'resume',
-      'session-123'
-    ]);
+    expect(buildCodexArgs({kind: 'resume', sessionId: 'session-123'})).toEqual(['resume', 'session-123']);
   });
 
   test('builds a fork invocation for a selected session', () => {
@@ -32,9 +29,8 @@ describe('buildCodexArgs', () => {
   });
 
   test('returns a failed result instead of throwing when codex exits non-zero', async () => {
-    const result = await runCodexAction(
-      {kind: 'resume', sessionId: 'session-123'},
-      async () => ({
+    const result = await runCodexAction({kind: 'resume', sessionId: 'session-123'}, () =>
+      Promise.resolve({
         failed: true,
         exitCode: 2,
         shortMessage: 'codex failed'

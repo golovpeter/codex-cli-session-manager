@@ -9,19 +9,12 @@ export type SessionFilterOptions = {
   currentCwd?: string;
 };
 
-export function filterSessions(
-  sessions: readonly CodexSession[],
-  options: SessionFilterOptions
-): CodexSession[] {
+export function filterSessions(sessions: readonly CodexSession[], options: SessionFilterOptions): CodexSession[] {
   const query = options.query.trim().toLowerCase();
   const currentCwd = options.currentCwd ? normalizePath(options.currentCwd) : undefined;
 
   return sessions.filter(session => {
-    if (
-      options.scope === 'current-cwd' &&
-      currentCwd &&
-      normalizePath(session.cwd) !== currentCwd
-    ) {
+    if (options.scope === 'current-cwd' && currentCwd && normalizePath(session.cwd) !== currentCwd) {
       return false;
     }
 
